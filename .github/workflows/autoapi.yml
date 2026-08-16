@@ -9,7 +9,11 @@ on:
       - master
       - develop
   schedule:
-    - cron: '0 */12 * * 1'
+    # Cron times are fixed, so randomness is added inside the job:
+    # the workflow fires every 6 hours, then each run randomly decides
+    # whether to call Microsoft and waits a random 0-3600s first, making
+    # the real renewal requests happen at effectively random times.
+    - cron: '0 */6 * * *'
   watch:
     types: [started]
   workflow_dispatch:
@@ -29,7 +33,19 @@ jobs:
     - name: Install dependencies
       run: |
         pip install requests PyNaCl
+    - name: Randomly decide whether to run this cycle
+      id: random
+      run: |
+        if (( RANDOM % 2 == 0 )); then
+          echo "run=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "run=false" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Random delay before calling Microsoft APIs
+      if: steps.random.outputs.run == 'true'
+      run: sleep $((RANDOM % 3600))
     - name: Call the Microsoft Graph API to get the refresh_token
+      if: steps.random.outputs.run == 'true'
       run: |
         echo `date +"%Y-%m-%d %H:%M:%S"` begin > time.log
         python auto_renew_e5.py -i $CONFIG_ID -s $CONFIG_KEY -r $CONFIG_REFRESH
@@ -49,6 +65,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.E5_API }}
     - name: Commit time.log to keep the scheduled workflow active
+      if: steps.random.outputs.run == 'true'
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
