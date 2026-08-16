@@ -38,7 +38,7 @@ jobs:
         CONFIG_KEY: ${{ secrets.CONFIG_KEY }}
         CONFIG_REFRESH: ${{ secrets.CONFIG_REFRESH }}
     - name: Update secret CONFIG_REFRESH
-      if: always()
+      if: always() && hashFiles('refresh_token.txt') != ''
       run: |
         PUBKEY_JSON=$(gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/${{ github.repository }}/actions/secrets/public-key)
         KEY_ID=$(echo "$PUBKEY_JSON" | jq -r .key_id)
