@@ -1,0 +1,5 @@
+# Never commit the local refresh token
+refresh_token.txt
+
+# Python cache
+__pycache__/
