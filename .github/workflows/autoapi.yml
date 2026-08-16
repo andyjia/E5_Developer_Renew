@@ -14,10 +14,14 @@ on:
     # whether to call Microsoft and waits a random 0-3600s first, making
     # the real renewal requests happen at effectively random times.
     - cron: '0 */6 * * *'
-  watch:
-    types: [started]
   workflow_dispatch:
-   
+
+# Never run two renewals at the same time: overlapping runs would race on
+# the same refresh token and could write back a stale secret.
+concurrency:
+  group: e5-renew
+  cancel-in-progress: false
+
 jobs:
    Task:
     permissions:
@@ -32,7 +36,7 @@ jobs:
         python-version: '3.12'
     - name: Install dependencies
       run: |
-        pip install requests PyNaCl
+        pip install -r requirements.txt
     - name: Randomly decide whether to run this cycle
       id: random
       run: |
@@ -48,23 +52,26 @@ jobs:
       if: steps.random.outputs.run == 'true'
       run: |
         echo `date +"%Y-%m-%d %H:%M:%S"` begin > time.log
-        python auto_renew_e5.py -i $CONFIG_ID -s $CONFIG_KEY -r $CONFIG_REFRESH
+        python auto_renew_e5.py
       env:
-        CONFIG_ID: ${{ secrets.CONFIG_ID }}
-        CONFIG_KEY: ${{ secrets.CONFIG_KEY }}
-        CONFIG_REFRESH: ${{ secrets.CONFIG_REFRESH }}
+        AZURE_CLIENT_ID: ${{ secrets.CONFIG_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.CONFIG_KEY }}
+        REFRESH_TOKEN: ${{ secrets.CONFIG_REFRESH }}
     - name: Update secret CONFIG_REFRESH
       if: always() && hashFiles('refresh_token.txt') != ''
       run: |
         PUBKEY_JSON=$(gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/${{ github.repository }}/actions/secrets/public-key)
         KEY_ID=$(echo "$PUBKEY_JSON" | jq -r .key_id)
         PUB_KEY=$(echo "$PUBKEY_JSON" | jq -r .key)
-        SECRET_VALUE=$(cat refresh_token.txt)
-        ENCRYPTED_VALUE=$(python github_secret_encrypt.py -p "$PUB_KEY" -s "$SECRET_VALUE")
+        ENCRYPTED_VALUE=$(python github_secret_encrypt.py -p "$PUB_KEY" < refresh_token.txt)
         gh api --method PUT -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/${{ github.repository }}/actions/secrets/CONFIG_REFRESH -f encrypted_value="$ENCRYPTED_VALUE" -f key_id="$KEY_ID"
       env:
         GH_TOKEN: ${{ secrets.E5_API }}
     - name: Commit time.log to keep the scheduled workflow active
+      # Heartbeat commit: keeps the repository active so GitHub does not
+      # auto-disable the scheduled workflow after 60 days without activity.
+      # Pushing with the repository's GITHUB_TOKEN does NOT re-trigger this
+      # workflow (GitHub's anti-recursion rule), so there is no loop risk.
       if: steps.random.outputs.run == 'true'
       run: |
         git config user.name "github-actions[bot]"

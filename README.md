@@ -60,15 +60,15 @@ Add all the permissions listed below, and click `Add permissions` to finish the 
 - `files.read.all`
 - `files.readwrite.all`
 - `sites.read.all`
-- `sites.readwriter.all`
+- `sites.readwrite.all`
 - `user.read.all`
 - `user.readwrite.all`
 - `directory.read.all`
 - `directory.readwrite.all`
 - `mail.read`
 - `mail.readwrite`
-- `mailboxsetting.read`
-- `mailboxsetting.readwrite`
+- `mailboxsettings.read`
+- `mailboxsettings.readwrite`
 
 To be honest, not all of the permissions are required. It depends on the API list in `auto_renew_e5.py`. You can remove the permissions if you don't need.
 
@@ -86,9 +86,9 @@ For more information, please refer to [this article](https://docs.microsoft.com/
 When you are done, please run the following command to get your first refresh token.
 
 ```bash
-rclone authorize "onedrive" "<Application (client) ID>" "<Value>"
+rclone authorize "onedrive" "<Application (client) ID>" "<Value[3]>"
 ```
- > Note: `Client secret` is not required.
+ > Note: the second argument to `rclone` is the client secret you created in step 3 (`Value[3]`); the `Client secret` shown on the registration page in step 2 (`Value[2]`) does not need to be saved separately.
 
 After you run the command, a browser window will pop up, and you will be asked to log in to your E5 account. After you log in, you will be asked to grant the permissions to your new application. Please click `Accept` to finish the authorization.
 
@@ -134,7 +134,3 @@ Now everything is ready. You leave the rest to GitHub Actions.
 
 ## **Disclaimer**
 This project is for educational and experimental purposes only. I am not responsible for any damage caused by this project. Please use it at your own risk.
-
-## **Counter**
-As Github will disable inactive projects' action, we could add count here to activate it.
-- 1

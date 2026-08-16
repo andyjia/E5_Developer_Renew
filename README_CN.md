@@ -63,15 +63,15 @@
 - `files.read.all`
 - `files.readwrite.all`
 - `sites.read.all`
-- `sites.readwriter.all`
+- `sites.readwrite.all`
 - `user.read.all`
 - `user.readwrite.all`
 - `directory.read.all`
 - `directory.readwrite.all`
 - `mail.read`
 - `mail.readwrite`
-- `mailboxsetting.read`
-- `mailboxsetting.readwrite`
+- `mailboxsettings.read`
+- `mailboxsettings.readwrite`
 
 老实说，并非所有权限都是必需的。这取决于 `auto_renew_e5.py` 中的 API 列表。如果你不需要，可以移除这些权限。
 
@@ -90,7 +90,7 @@
 ```bash
 rclone authorize "onedrive" "<Value[1]>" "<Value[3]>"
 ```
- > Note: `Client secret (Value[2])` 不是必须的.
+ > Note: `rclone` 命令行的第二个参数是 client secret，即步骤 3 创建的 `Value[3]`；步骤 2 中注册页显示的 `Client secret`（`Value[2]`）无需单独保存。
 
 在运行命令后，将会弹出一个浏览器窗口，并要求您登录到您的E5帐户。登录后，您将被要求授予新应用程序的权限。请点击 `Accept` 以完成授权。
 
